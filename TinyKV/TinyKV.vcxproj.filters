@@ -16,10 +16,16 @@
     <Filter Include="源文件\TreeNode">
       <UniqueIdentifier>{344f410a-6cbb-4339-b069-3211dda10b3e}</UniqueIdentifier>
     </Filter>
+    <Filter Include="源文件\SkipList">
+      <UniqueIdentifier>{c99348e8-170d-4cdf-9068-7a06139be07c}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="TreeNode.cpp">
       <Filter>源文件\TreeNode</Filter>
+    </ClCompile>
+    <ClCompile Include="skiplist.cpp">
+      <Filter>源文件\SkipList</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
