@@ -19,25 +19,24 @@
 #include<algorithm>
 #include<vector>
 
-template <typename T, typename valueType, typename keyType>
-
+template <typename valueType, typename keyType>
 class SkipList {
 private:
 	// 跳表每个节点的数据结构
-	typedef struct node {
+	struct Node {
 		keyType key;
 		valueType value;
 
 		std::vector<Node*> next;
 
 		Node(const keyType& k, const valueType& v, int level) : key(k), value(v), next(level, nullptr) {}
-	}Node*;
+	};
 
 	int maxLevel;       // 最大层数
 	int currentLevel;   // 当前层数
 	Node* head;         // 头节点
 
-	std::vector<Node*> pathList;  // 查找时的临时变量
+	std::vector<Node*> pathList(maxLevel, 0);  // 查找时的临时变量
 
 	// 层数的生成逻辑
 	int randomLevel() {
@@ -48,7 +47,7 @@ private:
 		return level;
 	}
 
-
+	// 跳表的测试
 	void TestSkipList() {
 
 	}
@@ -94,8 +93,8 @@ public:
 	}
 
 	// 查询跳表
-	valueType* search(Skiplist* sl, keyType key) {
-		Node* p = sl->head;
+	valueType* search(keyType key) {
+		Node* p = head;
 		
 		while (p) {
 			// 左右寻找目标区间  显然，我们可以上来就能确定他的大区间在哪
@@ -137,7 +136,7 @@ public:
 				p = p->next[i];
 			}
 			// 记录每一层的前驱节点
-			pathList.push_back(p);
+			pathList[i] = p;
 		}
 
 		// 2.如果键值已存在，则更新值
@@ -153,7 +152,7 @@ public:
 		if (newLevel > currentLevel) {
 			// 如果新节点层数大于当前跳表的层数
 			for (int i = currentLevel; i < newLevel; i++) {
-				pathList.push_back(head);
+				pathList[i] = head;  // 一个特殊情况，处理head的位置
 			}
 			currentLevel = newLevel;
 		}
@@ -166,12 +165,50 @@ public:
 			newNode->next[i] = pathList[i]->next[i];
 			pathList[i]->next[i] = newNode;
 		}
+
+		delete p;
 	}
 
-	// 清除节点
-	void erase() {
+	// 清除节点  删除跳表中指定键的节点
+	bool erase(keyType key) {
+		pathList.clear();
+		Node* p = head;
 
+		// 1.查找待删除节点
+		for (int i = currentLevel - 1; i >= 0; i--) {
+			while (p->next[i] && p->next[i]->key < key) {
+				p = p->next[i];
+			}
+			pathList[i] = p;
+		}
+
+		// 2.检查节点是否存在
+		p = p->next[0];
+		if (!p || p->key != key) {
+			return false;
+		}
+
+		// 3.更新指针
+		for (int i = 0; i < currentLevel; i++) {
+			if (pathList[i]->next[i] != p) {
+				break;  // 当前层没有待删除节点
+			}
+			pathList[i]->next[i] = p->next[i];
+		}
+
+		// 4.更新跳表层数
+		while (currentLevel > 1 && head->next[currentLevel - 1] == nullptr) {
+			--currentLevel; // 降低跳表的层数  如果为最后一层的话那就不变了
+		}
+
+		delete p;
+		return true;
 	}
 
 };
 
+
+
+int main() {
+
+}
