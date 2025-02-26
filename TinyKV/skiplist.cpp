@@ -33,10 +33,9 @@ private:
 	};
 
 	int maxLevel;       // 最大层数
+	int minLevel;
 	int currentLevel;   // 当前层数
 	Node* head;         // 头节点
-
-	std::vector<Node*> pathList(maxLevel, 0);  // 查找时的临时变量
 
 	// 层数的生成逻辑
 	int randomLevel() {
@@ -47,17 +46,10 @@ private:
 		return level;
 	}
 
-	// 跳表的测试
-	void TestSkipList() {
-
-	}
-
-
 public:
 	// 跳表的构造函数与析构函数
-	SkipList() : maxLevel(16), minLevel(1) {
+	SkipList() : maxLevel(32), minLevel(1) {
 		std::srand(std::time(0));  // 初始化随机种子
-
 		head = new Node(keyType(), valueType(), maxLevel);
 	}
 
@@ -96,21 +88,16 @@ public:
 	valueType* search(keyType key) {
 		Node* p = head;
 		
-		while (p) {
-			// 左右寻找目标区间  显然，我们可以上来就能确定他的大区间在哪
-			while (p->next[i] && p->next[i]->key < key) {
+		for (int i = currentLevel - 1; i >= 0; --i) {
+			while (p->next[i] != nullptr && p->next[i]->key < key) {
 				p = p->next[i];
 			}
-			// 没找到目标，向下走
-			if (!p->next[i] || p->next[i]->key > key) {
-				p = p->down;
-			}
-			else {
-				return &(p->value);
+			if (p->next[i] && p->next[i]->key == key) {
+				return &(p->next[i]->value);
 			}
 		}
 
-		return NULL;
+		return nullptr;
 	}
 
 	// 插入元素  不仅在底层有序链表中插入新节点，还需要随机算法来决定新节点的层数
@@ -127,7 +114,7 @@ public:
 
 	void Insert(const keyType& key, const valueType& value) {
 		// 1.寻找插入位置
-		pathList.clear();
+		std::vector<Node*> pathList(maxLevel + 1);
 		Node* p = head;
 
 		// 从上到下去搜索，搜索次小于num的数字
@@ -165,13 +152,11 @@ public:
 			newNode->next[i] = pathList[i]->next[i];
 			pathList[i]->next[i] = newNode;
 		}
-
-		delete p;
 	}
 
 	// 清除节点  删除跳表中指定键的节点
 	bool erase(keyType key) {
-		pathList.clear();
+		std::vector<Node*> pathList(maxLevel + 1);
 		Node* p = head;
 
 		// 1.查找待删除节点
@@ -205,10 +190,40 @@ public:
 		return true;
 	}
 
+
+	// 跳表的测试
+	void TestSkipList() {
+		std::cout << "插入元素: (1, 'one'), (3, 'three'), (7, 'seven'), (4, 'four'), (9, 'nine')\n";
+		Insert(1, "one");
+		Insert(3, "three");
+		Insert(7, "seven");
+		Insert(4, "four");
+		Insert(9, "nine");
+
+		PrintSkipList();
+
+		std::cout << "\n查询元素 7: " << *search(7) << std::endl;
+		std::cout << "查询元素 5: " << (search(5) ? *search(5) : "Not Found") << std::endl;
+
+		std::cout << "\n删除元素 4\n";
+		erase(4);
+		PrintSkipList();
+
+		std::cout << "\n删除元素 1\n";
+		erase(1);
+		PrintSkipList();
+
+		std::cout << "\n插入元素: (5, 'five')\n";
+		Insert(5, "five");
+		PrintSkipList();
+	}
+
 };
 
 
 
 int main() {
-
+	SkipList<std::string, int> skiplist;
+	skiplist.TestSkipList();
+	return 0;
 }
