@@ -6,24 +6,50 @@
 #include <iostream>
 #include <vector>
 #include <thread>
+#include <fstream>
+#include <cstdlib>
 
 template <typename valueType, typename keyType>
 class SkipListAtomic {
 private:
     // 跳表每个节点的数据结构
+
+    // 原子指针
+        /*
+
+            什么是原子化操作？
+            实际上在赋值的时候，赋值一次可能是多次操作，中间可能会有冲突的风险。
+            采用原子化操作，避免了这个风险。
+
+            原子化操作：
+            load:   读取原子变量的值，不会被其它线程打断
+            store:  给原子变量赋值，不会被其它现场打断
+
+            三大内存顺序：
+            memory_order_acquire:确保读取的数据是最新的，并且后续操作依赖于读取的结果。用于写操作。
+            memory_order_relax:不要求，速率最快。比如初始化的时候，没有其他线程干扰。
+            memory_order_relase:当你需要确保写入的数据对其他线程可见，并且写入之前的操作不会被重排序。用于读操作。
+
+        */
+
     struct Node {
         keyType key;
         valueType value;
 
-        // 原子指针
         std::vector<std::atomic<Node*>> next;
         std::vector<std::mutex> locks;  // 每层一个锁
 
         Node(const keyType& k, const valueType& v, int level) : key(k), value(v), next(level), locks(level) {
             for (int i = 0; i < level; i++) {
-                next[i].store(nullptr, std::memory_order_relaxed); // 修复：添加分号
+                next[i].store(nullptr, std::memory_order_relaxed);
             }
         }
+    };
+
+    struct SSTableHeader {
+        uint64_t magic_number; // 文件标识
+        uint32_t version;      // 格式版本
+        uint64_t data_offset;  // 数据块起始偏移
     };
 
     int maxLevel;       // 最大层数
@@ -48,14 +74,13 @@ public:
     }
 
     ~SkipListAtomic() {
-        // 注意，这是一层层地释放的
-        Node* current = head;
-        while (current) {
-            Node* next = current->next[0].load(std::memory_order_relaxed);
-            delete current;
-            current = next;
-        }
+
     }
+
+    void WriteToDisk(std::string& filename);
+
+    // 读出磁盘
+    void LoadFromDisk(std::string& filename);
 
     void PrintSkipList() const;
     valueType* search(keyType key);
@@ -69,7 +94,7 @@ template <typename valueType, typename keyType>
 void SkipListAtomic<valueType, keyType>::PrintSkipList() const {
     for (int i = currentLevel - 1; i >= 0; i--) {
         std::cout << "层" << i + 1 << ":";
-        Node* current = head->next[i].load(std::memory_order_acquire); // 使用load方法
+        Node* current = head->next[i].load(std::memory_order_acquire); // 使用load
 
         while (current) {
             std::cout << current->key << "(" << current->value << ")";
@@ -150,8 +175,7 @@ bool SkipListAtomic<valueType, keyType>::erase(keyType key) {
 
     // 1. 查找待删除节点
     for (int i = currentLevel - 1; i >= 0; --i) {
-        while (p->next[i].load(std::memory_order_acquire) != nullptr &&
-            p->next[i].load(std::memory_order_acquire)->key < key) {
+        while (p->next[i].load(std::memory_order_acquire) != nullptr && p->next[i].load(std::memory_order_acquire)->key < key) {
             p = p->next[i].load(std::memory_order_acquire);
         }
         pathList[i] = p;
@@ -181,6 +205,60 @@ bool SkipListAtomic<valueType, keyType>::erase(keyType key) {
     delete p;
     return true;
 }
+
+template <typename valueType, typename keyType>
+void SkipListAtomic<valueType, keyType>::WriteToDisk(std::string& filename) {
+    std::ofstream outfile(filename, std::ios::binary);
+
+    // 1.写入Header
+    SSTableHeader header;
+    header.magic_number = 0x12345678;
+    header.version = 1;
+    header.data_offset = sizeof(header);
+
+    outfile.write(reinterpret_cast<char*>(&header), sizeof(header));
+
+    // 2.写入Data Block   只需要把底层给写入
+    auto p = head->next[0].load(std::memory_order_acquire);
+    while (p != nullptr) {
+        outfile.write(reinterpret_cast<const char*>(&p->key), sizeof(p->key));
+        outfile.write(reinterpret_cast<const char*>(&p->value), sizeof(p->value));
+        p = p->next[0].load(std::memory_order_acquire);
+    }
+
+    outfile.close();
+}
+
+
+template <typename valueType, typename keyType>
+void SkipListAtomic<valueType, keyType>::LoadFromDisk(std::string& filename) {
+    std::ifstream infile(filename, std::ios::binary);
+
+    // 1.读取header
+    SSTableHeader header;
+    infile.read(reinterpret_cast<char*>(&header), sizeof(header));
+
+    if (header.magic_number != 0x12345678 || header.version != 1) {
+        throw std::runtime_error("Invalid SSTable file format");
+    }
+
+    // 2.读取data block
+    infile.seekg(header.data_offset);
+    while (infile) {
+        keyType key;
+        valueType value;
+
+        infile.read(reinterpret_cast<char*>(&key), sizeof(key));
+        infile.read(reinterpret_cast<char*>(&value), sizeof(value));
+
+        if (infile) {
+            Insert(key, value);
+        }
+    }
+
+    infile.close();
+}
+
 
 template <typename valueType, typename keyType>
 void SkipListAtomic<valueType, keyType>::TestSkipList() {
@@ -228,7 +306,7 @@ void SkipListAtomic<valueType, keyType>::test_concurrent_access() {
         for (int i = 0; i < 1000; ++i) {
             this->erase(i);
         }
-        };
+    };
 
     // 查询线程
     auto search_func = [this]() {
@@ -237,8 +315,11 @@ void SkipListAtomic<valueType, keyType>::test_concurrent_access() {
             if (result) {
                 std::cout << "Found: " << *result << std::endl;
             }
+            else {
+                std::cout << "Not Found: " << i << std::endl;
+            }
         }
-        };
+    };
 
     // 启动多个线程
     std::vector<std::thread> threads;
