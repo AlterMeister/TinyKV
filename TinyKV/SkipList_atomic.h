@@ -8,6 +8,7 @@
 #include <thread>
 #include <fstream>
 #include <cstdlib>
+#include <shared_mutex>
 
 template <typename valueType, typename keyType>
 class SkipListAtomic {

@@ -127,11 +127,15 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="main.cpp" />
+    <ClCompile Include="method.cpp" />
     <ClCompile Include="skiplist.cpp" />
-    <ClCompile Include="TreeNode.cpp" />
+    <ClCompile Include="SkipList_atomic.cpp" />
+    <ClCompile Include="SkipList_atomic.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="TreeNode.h" />
+    <ClInclude Include="method.h" />
+    <ClInclude Include="skiplist.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

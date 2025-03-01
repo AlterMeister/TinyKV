@@ -1,9 +1,10 @@
 #ifndef SKIPLIST_H
 #define SKIPLIST_H
 
-
+#include <atomic>
 #include <iostream>
 #include <vector>
+#include <fstream>
 
 template <typename valueType, typename keyType>
 class SkipList {
@@ -16,6 +17,12 @@ private:
 		std::vector<Node*> next;
 
 		Node(const keyType& k, const valueType& v, int level) : key(k), value(v), next(level, nullptr) {}
+	};
+
+	struct SSTableHeader {
+		uint64_t magic_number; // 文件标识
+		uint32_t version;      // 格式版本
+		uint64_t data_offset;  // 数据块起始偏移
 	};
 
 	int maxLevel;       // 最大层数
@@ -77,7 +84,6 @@ public:
 
 	// 跳表的测试
 	void TestSkipList();
-
 };
 
 template <typename valueType, typename keyType>
@@ -193,7 +199,6 @@ bool SkipList<valueType, keyType>::erase(keyType key) {
 	delete p;
 	return true;
 }
-
 
 template <typename valueType, typename keyType>
 void SkipList<valueType, keyType>::TestSkipList() {

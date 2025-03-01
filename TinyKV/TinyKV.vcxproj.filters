@@ -13,24 +13,36 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
-    <Filter Include="源文件\TreeNode">
-      <UniqueIdentifier>{344f410a-6cbb-4339-b069-3211dda10b3e}</UniqueIdentifier>
-    </Filter>
     <Filter Include="源文件\SkipList">
       <UniqueIdentifier>{c99348e8-170d-4cdf-9068-7a06139be07c}</UniqueIdentifier>
     </Filter>
+    <Filter Include="源文件\atomic">
+      <UniqueIdentifier>{7c710b56-0ff0-4439-8416-b0b5e27ae586}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="TreeNode.cpp">
-      <Filter>源文件\TreeNode</Filter>
-    </ClCompile>
     <ClCompile Include="skiplist.cpp">
       <Filter>源文件\SkipList</Filter>
     </ClCompile>
+    <ClCompile Include="SkipList_atomic.h">
+      <Filter>源文件\atomic</Filter>
+    </ClCompile>
+    <ClCompile Include="SkipList_atomic.cpp">
+      <Filter>源文件\atomic</Filter>
+    </ClCompile>
+    <ClCompile Include="main.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="method.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="TreeNode.h">
-      <Filter>源文件\TreeNode</Filter>
+    <ClInclude Include="skiplist.h">
+      <Filter>源文件\SkipList</Filter>
+    </ClInclude>
+    <ClInclude Include="method.h">
+      <Filter>源文件</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

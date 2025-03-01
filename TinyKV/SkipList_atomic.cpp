@@ -1,6 +1,7 @@
 #include "SkipList_atomic.h"
 
 
+/*
 int main() {
     SkipListAtomic<std::string, int> skipList;
 
@@ -53,3 +54,4 @@ int main() {
 
     return 0;
 }
+*/
